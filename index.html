@@ -46,7 +46,7 @@
       const [gilOwned, setGilOwned] = useState(500);
       const [elanEnabled, setElanEnabled] = useState(false);
       const [numTargets, setNumTargets] = useState(1);
-      const power = 101; // data‑driven “power” parameter
+      const power = 101; // Gil Used per level
 
       // Sync Spirit whenever Level changes
       useEffect(() => {
@@ -56,18 +56,19 @@
       // Compute core values
       const gilUsed = power * level;
       const canCast = gilOwned >= gilUsed;
-      const denom = gilOwned + gilUsed;
-      const step2 = Math.floor((gilUsed * gilUsed) / 10);
 
-      // Damage math
-      const baseRaw = canCast 
-        ? Math.floor((step2 * spirit) / denom) 
+      // New Damage math according to the provided formula:
+      // Damage = [(Gil Used * Gil Used * Spirit) / (Gil Owned * 10)]
+      const numerator = gilUsed * gilUsed * spirit;
+      const denominator = gilOwned * 10;
+      const baseRaw = canCast && denominator > 0
+        ? Math.floor(numerator / denominator)
         : 0;
-      const splitRaw = (elanEnabled && canCast) 
-        ? Math.floor(baseRaw / numTargets) 
+      const splitRaw = (elanEnabled && canCast)
+        ? Math.floor(baseRaw / numTargets)
         : baseRaw;
-      const finalDamage = Math.min(splitRaw, 9999);
-      const capStep = elanEnabled ? 6 : 5;
+      const finalDamage = Math.min(splitRaw, 9999); // Still cap at 9999
+      const capStep = elanEnabled ? 5 : 4;
 
       // Handlers
       const handleGilChange = v => {
@@ -200,16 +201,16 @@
                     <span className="font-mono">{power} × {level} = {gilUsed.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>2. Square / 10</span>
-                    <span className="font-mono">floor({gilUsed.toLocaleString()}² / 10) = {step2.toLocaleString()}</span>
+                    <span>2. Numerator</span>
+                    <span className="font-mono">{gilUsed.toLocaleString()} × {gilUsed.toLocaleString()} × {spirit} = {numerator.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>3. Gil Owned</span>
-                    <span className="font-mono">{gilOwned.toLocaleString()} + {gilUsed.toLocaleString()} = {denom.toLocaleString()}</span>
+                    <span>3. Denominator</span>
+                    <span className="font-mono">{gilOwned.toLocaleString()} × 10 = {denominator.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>4. Raw Damage</span>
-                    <span className="font-mono">floor({step2.toLocaleString()} × {spirit} / {denom.toLocaleString()}) = {baseRaw.toLocaleString()}</span>
+                    <span className="font-mono">floor({numerator.toLocaleString()} / {denominator.toLocaleString()}) = {baseRaw.toLocaleString()}</span>
                   </div>
                   {elanEnabled && (
                     <div className="flex justify-between">
